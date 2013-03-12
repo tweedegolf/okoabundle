@@ -1,0 +1,13 @@
+{
+    "name": "tg/okoabundle",
+    "description": "Symfony bundle for Okoa",
+    "authors": [
+        {
+            "name": "Ruben Nijveld",
+            "email": "ruben@tweedegolf.nl"
+        }
+    ],
+    "require": {
+
+    }
+}
