@@ -4,6 +4,7 @@ namespace Tg\OkoaBundle\Behavior;
 
 use BadMethodCallException;
 use Doctrine\Common\Persistence\PersistentObject;
+use Doctrine\Common\Util\ClassUtils;
 use ReflectionClass;
 
 /**
@@ -11,7 +12,6 @@ use ReflectionClass;
  */
 abstract class Persistable extends PersistentObject
 {
-
     /**
      * Remove an item from a relation collection and return it.
      * @param  string $field Fieldname of the relation
@@ -90,7 +90,7 @@ abstract class Persistable extends PersistentObject
      */
     public static function classname()
     {
-        return get_called_class();
+        return ClassUtils::getRealClass(get_called_class());
     }
 
     /**
