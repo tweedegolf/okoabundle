@@ -29,6 +29,6 @@ class AnnotationUtil
 		if(!$annotation) {
 			throw new Exception(sprintf("Property '%s' does not have a Choice annotation.", $propertyName));
 		}
-		return $annotation->choices;
+		return array_combine($annotation->choices, $annotation->choices);
 	}
 }
