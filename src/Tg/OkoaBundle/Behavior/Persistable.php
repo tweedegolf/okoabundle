@@ -5,11 +5,7 @@ namespace Tg\OkoaBundle\Behavior;
 use BadMethodCallException;
 use Doctrine\Common\Persistence\PersistentObject;
 use Doctrine\Common\Util\ClassUtils;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Symfony\Component\Validator\Constraints as Assert;
 use ReflectionClass;
-use ReflectionProperty;
-use Exception;
 
 /**
  * An object that can persist throughout requests by storing it in a database.
