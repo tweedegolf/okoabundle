@@ -107,7 +107,7 @@ abstract class Persistable extends PersistentObject
      * @param  int $id
      * @return Persistable|null
      */
-    public static function id($id)
+    public static function find($id)
     {
         return static::repo()->find($id);
     }
