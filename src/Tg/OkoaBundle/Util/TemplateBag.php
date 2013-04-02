@@ -11,8 +11,23 @@ class TemplateBag extends ArrayObject
         parent::__construct($data, ArrayObject::ARRAY_AS_PROPS);
     }
 
-    public function toArray()
+    public function data()
     {
         return $this->getArrayCopy();
+    }
+
+    public function __invoke()
+    {
+        return $this->data();
+    }
+
+    public function toArray()
+    {
+        return $this->data();
+    }
+
+    public function __toArray()
+    {
+        return $this->data();
     }
 }
