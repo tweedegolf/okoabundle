@@ -1,0 +1,4 @@
+services:
+  em:
+    alias: doctrine.orm.entity_manager
+
