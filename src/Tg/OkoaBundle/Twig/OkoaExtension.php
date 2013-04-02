@@ -11,6 +11,8 @@ use Twig_SimpleTest;
 
 class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
 {
+    const DEFAULT_ACTIVE_TEXT = 'active';
+
     private $container;
 
     public function setContainer(ContainerInterface $container = null)
@@ -50,7 +52,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         ];
     }
 
-    public function active($what, $output = 'class="active"')
+    public function active($what, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         $items = explode(':', $what);
         switch (count($items)) {
@@ -65,7 +67,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         }
     }
 
-    public function activeRoute($route, $output = 'class="active"')
+    public function activeRoute($route, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         $activeRoute = $this->container->get('request')->get('_route');
         $route = preg_quote($route, '@');
@@ -77,7 +79,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         }
     }
 
-    public function activeController($controller, $output = 'class="active"')
+    public function activeController($controller, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         list($bundle, $controllerName) = explode(':', $controller);
         $controller = $this->container->get('request')->get('_controller');
@@ -90,7 +92,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         }
     }
 
-    public function activeAction($action, $output = 'class="active"')
+    public function activeAction($action, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         list($bundle, $controllerName, $actionName) = explode(':', $action);
         $controller = $this->container->get('request')->get('_controller');
@@ -103,7 +105,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         }
     }
 
-    public function activeBundle($bundle, $output = 'class="active"')
+    public function activeBundle($bundle, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         $controller = $this->container->get('request')->get('_controller');
         $bundle = $this->container->get('kernel')->getBundle($bundle);
