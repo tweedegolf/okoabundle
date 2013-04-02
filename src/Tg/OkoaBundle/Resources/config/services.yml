@@ -1,4 +1,9 @@
 services:
+  okoa.twig.okoa_extension:
+    class: Tg\OkoaBundle\Twig\OkoaExtension
+    tags: [{ name: twig.extension }]
+    calls:
+      - [setContainer, [@service_container]]
   em:
     alias: doctrine.orm.entity_manager
 
