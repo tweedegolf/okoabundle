@@ -84,6 +84,15 @@ abstract class Persistable extends PersistentObject
         $this->$setter($value);
     }
 
+    public function __isset($property)
+    {
+        try {
+            return $this->__get($property) !== null;
+        } catch (BadMethodCallException $e) {
+            return false;
+        }
+    }
+
     /**
      * Retrieve the name of the class
      * @return string
