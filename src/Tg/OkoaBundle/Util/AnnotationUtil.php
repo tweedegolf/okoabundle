@@ -14,6 +14,29 @@ use Exception;
 class AnnotationUtil
 {
 	/**
+	 * Retrieve an annotation for a Field
+	 * @param	string	The classname of the class to retrieve the annotation for
+	 * @param	string	The name of the annotation to retrieve
+	 * @param	string	The name of the property to retrieve the annotation for, if any
+	 * @return 	mixed	The annotation if found or null otherwise
+	 */
+	public static function getAnnotation($className, $annotationName, $propertyName = null)
+	{
+		if(is_object($className)) {
+			$className = get_class($className);
+		}
+		$reader = new AnnotationReader();
+		if($propertyName === null) {
+			$reflectionClass = new ReflectionClass($className);
+			$annotation = $reader->getClassAnnotation($reflectionClass, $annotationName);
+		} else {
+			$reflectionProperty = new ReflectionProperty($className, $propertyName);
+			$annotation = $reader->getPropertyAnnotation($reflectionProperty, $annotationName);
+		}
+		return $annotation;
+	}
+	
+	/**
 	 * Get the options that are available for a property of a class
 	 * Options are only available if the @Assert\Choice annotation is set
 	 * @param string $className  	The name of the class
@@ -22,12 +45,7 @@ class AnnotationUtil
 	 */
 	public static function getOptionsForField($className, $propertyName)
 	{
-		if(is_object($className)) {
-			$className = get_class($className);
-		}
-		$reflectionProperty = new ReflectionProperty($className, $propertyName);
-		$reader = new AnnotationReader();
-		$annotation = $reader->getPropertyAnnotation($reflectionProperty, 'Symfony\Component\Validator\Constraints\Choice');
+		$annotation = self::getAnnotation($className, 'Symfony\Component\Validator\Constraints\Choice', $propertyName);
 		if(!$annotation) {
 			throw new Exception(sprintf("Property '%s' does not have a Choice annotation.", $propertyName));
 		}
@@ -36,47 +54,27 @@ class AnnotationUtil
 	
 	/**
 	 * Get the types that a Subclass instances of a Superclass may have
-	 * Only available if the @ORM\InheritanceType is SINGLE_TABLE and the @ORM\DiscriminatorMap
-	 * annotation is available
+	 * Only available if the @ORM\DiscriminatorMap annotation is available
 	 * @param string $className  	The name of the class
 	 * @return []                   An array of available types
 	 */
 	public static function getTypesForClass($className)
 	{
-		if(is_object($className)) {
-			$className = get_class($className);
-		}
-		$reflectionClass = new ReflectionClass($className);
-		$reader = new AnnotationReader();
-		$inheritanceTypeAnnotation = $reader->getClassAnnotation($reflectionClass, 'Doctrine\ORM\Mapping\InheritanceType');
-		$discriminatorMapAnnotation = $reader->getClassAnnotation($reflectionClass, 'Doctrine\ORM\Mapping\DiscriminatorMap');
-		if(!$inheritanceTypeAnnotation || $inheritanceTypeAnnotation->value !== 'SINGLE_TABLE') {
-			throw new Exception(sprintf("Class '%s' does not have single table inheritance.", $className));
-		}
+		$discriminatorMapAnnotation = self::getAnnotation($className, 'Doctrine\ORM\Mapping\DiscriminatorMap');
 		$keys = array_keys($discriminatorMapAnnotation->value);
 		return array_combine($keys, $keys);
 	}
 	
 	/**
 	 * Get the object type from a discriminator type for a class
-	 * Only available if the @ORM\InheritanceType is SINGLE_TABLE and the @ORM\DiscriminatorMap
-	 * annotation is available
+	 * Only available if the @ORM\DiscriminatorMap annotation is available
 	 * @param string $className  			The name of the class
 	 * @param string $discriminatorType  	The type as set in the discriminator column
 	 * @return string                  		The real object type
 	 */
 	public static function mapDiscriminatorTypeToObjectTypeForClass($className, $type)
 	{
-		if(is_object($className)) {
-			$className = get_class($className);
-		}
-		$reflectionClass = new ReflectionClass($className);
-		$reader = new AnnotationReader();
-		$inheritanceTypeAnnotation = $reader->getClassAnnotation($reflectionClass, 'Doctrine\ORM\Mapping\InheritanceType');
-		$discriminatorMapAnnotation = $reader->getClassAnnotation($reflectionClass, 'Doctrine\ORM\Mapping\DiscriminatorMap');
-		if($inheritanceTypeAnnotation->value !== 'SINGLE_TABLE') {
-			throw new Exception(sprintf("Class '%s' does not have single table inheritance.", $className));
-		}
+		$discriminatorMapAnnotation = self::getAnnotation($className, 'Doctrine\ORM\Mapping\DiscriminatorMap');
 		foreach($discriminatorMapAnnotation->value as $key => $value) {
 			if($key === $type) {
 				return $value;
