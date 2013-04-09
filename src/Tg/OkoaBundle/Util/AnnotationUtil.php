@@ -61,8 +61,9 @@ class AnnotationUtil
 	public static function getTypesForClass($className)
 	{
 		$discriminatorMapAnnotation = self::getAnnotation($className, 'Doctrine\ORM\Mapping\DiscriminatorMap');
-		$keys = array_keys($discriminatorMapAnnotation->value);
-		return array_combine($keys, $keys);
+		return $discriminatorMapAnnotation->value;
+		// $keys = array_keys($discriminatorMapAnnotation->value);
+		// return array_combine($keys, $keys);
 	}
 	
 	/**
