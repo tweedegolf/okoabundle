@@ -84,7 +84,11 @@ class ArrayUtil
      */
     public static function isAssociative($arr)
     {
-        return is_array($arr) && count(array_filter(array_keys($arr), 'is_string')) > 0;
+        if (is_array($arr)) {
+            $keys = array_keys($arr);
+            return count(array_filter($keys, 'is_string')) > 0 || min($keys) !== 0 || max($keys) !== count($keys) - 1;
+        }
+        return false;
     }
 
     /**

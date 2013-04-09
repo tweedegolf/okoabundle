@@ -1,9 +1,21 @@
 services:
-  okoa.twig.okoa_extension:
-    class: Tg\OkoaBundle\Twig\OkoaExtension
-    tags: [{ name: twig.extension }]
-    calls:
-      - [setContainer, [@service_container]]
-  em:
-    alias: doctrine.orm.entity_manager
+    em:
+        alias: doctrine.orm.entity_manager
 
+    okoa.twig_okoa_extension:
+        class: Tg\OkoaBundle\Twig\OkoaExtension
+        tags: [{ name: twig.extension }]
+        calls:
+            - [setContainer, [@service_container]]
+
+    okoa.help_type_extension:
+        class: Tg\OkoaBundle\Form\Extension\HelpTypeExtension
+        tags: [{ name: form.type_extension, alias: field }]
+        calls:
+            - [setAnnotationReader, [@annotation_reader]]
+
+    okoa.type_guesser:
+        class: Tg\OkoaBundle\Form\Extension\OkoaTypeGuesser
+        tags: [{ name: form.type_guesser }]
+        arguments:
+            - @validator.mapping.class_metadata_factory
