@@ -6,9 +6,13 @@ use Doctrine\ORM\Mapping as ORM;
 use Serializable;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Tg\OkoaBundle\Behavior\Persistable;
+use Tg\OkoaBundle\Behavior\DynamicDiscriminator;
 
 /**
- * @ORM\Entity(repositoryClass="Tg\OkoaBundle\Entity\UserRepository")
+ * @ORM\Entity(repositoryClass="Tg\OkoaBundle\Entity\Repository\UserRepository")
+ * @ORM\InheritanceType("JOINED")
+ * @ORM\DiscriminatorColumn(name="discriminator", type="string")
+ * @DynamicDiscriminator
  */
 class User extends Persistable implements UserInterface, Serializable
 {

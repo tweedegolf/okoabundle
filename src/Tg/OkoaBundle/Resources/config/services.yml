@@ -19,3 +19,9 @@ services:
         tags: [{ name: form.type_guesser }]
         arguments:
             - @validator.mapping.class_metadata_factory
+
+    okoa.listener.dynamic_discriminator:
+        class: Tg\OkoaBundle\Behavior\Listener\DiscriminatorSubscriber
+        tags: [{ name: doctrine.event_subscriber }]
+        calls:
+            - [setAnnotationReader, [@annotation_reader]]
