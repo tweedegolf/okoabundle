@@ -74,7 +74,7 @@ class User extends Persistable implements UserInterface, Serializable
 
     public function getUsername()
     {
-
+        return $this->username;
     }
 
     public function eraseCredentials()
