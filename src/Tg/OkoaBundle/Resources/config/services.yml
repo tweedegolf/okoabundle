@@ -25,3 +25,9 @@ services:
         tags: [{ name: doctrine.event_subscriber }]
         calls:
             - [setAnnotationReader, [@annotation_reader]]
+
+    okoa.user_manager:
+        class: Tg\OkoaBundle\Entity\Manager\UserManager
+        tags: [{name: doctrine.event_subscriber }]
+        arguments:
+            - @security.encoder_factory

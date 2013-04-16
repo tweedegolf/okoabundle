@@ -37,14 +37,25 @@ class User extends Persistable implements UserInterface, Serializable
     protected $password;
 
     /**
+     * The plain password to be hashed and stored in the database.
+     * @var string
+     */
+    protected $plainPassword;
+
+    /**
      * @ORM\Column(type="string", length=255)
      * @var string
      */
     protected $salt;
 
-    public function __construct()
+    /**
+     * Updates the salt to a new value and removes the old password
+     * The old password is removed because it is useless without the salt
+     */
+    public function refreshSalt()
     {
-        $this->salt = hash('sha256', uniqid(time(), true));
+        $this->setSalt(hash('sha256', uniqid(time(), true)));
+        $this->setPassword(null);
     }
 
     public function serialize()
@@ -81,8 +92,21 @@ class User extends Persistable implements UserInterface, Serializable
         return $this->username;
     }
 
+    public function setPlainPassword($plainPassword)
+    {
+        $this->plainPassword = $plainPassword;
+        if (is_string($plainPassword) && strlen(trim($plainPassword)) > 0) {
+            $this->refreshSalt();
+        }
+    }
+
+    public function getPlainPassword()
+    {
+        return $this->plainPassword;
+    }
+
     public function eraseCredentials()
     {
-
+        $this->setPlainPassword(false);
     }
 }

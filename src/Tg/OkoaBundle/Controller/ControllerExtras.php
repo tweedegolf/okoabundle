@@ -2,6 +2,8 @@
 
 namespace Tg\OkoaBundle\Controller;
 
+use RuntimeException;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Tg\OkoaBundle\Util\TemplateBag;
 
@@ -20,7 +22,7 @@ trait ControllerExtras
                 $serviceName = preg_replace_callback('/[A-Z]/', function ($matches) {
                     return '.' . strtolower($matches[0]);
                 }, $name);
-                $this->service_cache[$serviceName] = $this->get($name);
+                $this->service_cache[$name] = $this->get($serviceName);
             }
         }
         return $this->service_cache[$name];
@@ -49,6 +51,23 @@ trait ControllerExtras
     public function redirectTo($route, $parameters = [], $status = 302)
     {
         return $this->redirect($this->path($route, $parameters), $status);
+    }
+
+    public function addFlash($type, $message)
+    {
+        $this->session->getFlashBag()->add($type, $message);
+    }
+
+    public function redirectBack($type, $message)
+    {
+        $this->addFlash($type, $message);
+        $referer = $this->getRequest()->headers->get("referer");
+        $baseUrl = $this->getRequest()->getSchemeAndHttpHost();
+        if (strlen($referer) > strlen($baseUrl) && substr($referer, 0, strlen($baseUrl)) === $baseUrl) {
+            return new RedirectResponse($referer);
+        } else {
+            throw new RuntimeException("Cannot redirect to route outside of current domain");
+        }
     }
 
     abstract public function redirect($url, $status = 302);

@@ -3,6 +3,7 @@
 namespace Tg\OkoaBundle\Behavior;
 
 use BadMethodCallException;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Persistence\PersistentObject;
 use Doctrine\Common\Util\ClassUtils;
 use ReflectionClass;
@@ -57,7 +58,17 @@ abstract class Persistable extends PersistentObject
             try {
                 return parent::__call($method, $args);
             } catch (BadMethodCallException $e) {
-                return parent::__call('get' . ucfirst($method), $args);
+                $start = substr($method, 0, 3);
+                if ($start === 'set' && count($args) > 0 && (is_array($args[0]) || $args[0] instanceof ArrayCollection)) {
+                    $adder = 'add' . substr($method, 3);
+                    foreach ($args[0] as $item) {
+                        $this->$adder($item);
+                    }
+                } else if ($start !== 'get') {
+                    return parent::__call('get' . ucfirst($method), $args);
+                } else {
+                    throw $e;
+                }
             }
         }
     }
