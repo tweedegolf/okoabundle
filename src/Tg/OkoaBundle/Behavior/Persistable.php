@@ -60,6 +60,8 @@ abstract class Persistable extends PersistentObject
             } catch (BadMethodCallException $e) {
                 $start = substr($method, 0, 3);
                 if ($start === 'set' && count($args) > 0 && (is_array($args[0]) || $args[0] instanceof ArrayCollection)) {
+                    $getter = 'get' . substr($method, 3);
+                    $this->$getter()->clear();
                     $adder = 'add' . substr($method, 3);
                     foreach ($args[0] as $item) {
                         $this->$adder($item);
