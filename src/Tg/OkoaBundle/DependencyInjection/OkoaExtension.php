@@ -24,5 +24,10 @@ class OkoaExtension extends Extension
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
+
+        // load search config if it is enabled
+        if ($config['search']['enabled'] === true) {
+            $loader->load('search_' . $config['search']['type'] . '.yml');
+        }
     }
 }

@@ -1,0 +1,4 @@
+services:
+    okoa.search_manager:
+        class: "Tg\OkoaBundle\Search\Manager\MySqlFulltextManager"
+        tags: [{ name: doctrine.event_subscriber }]
