@@ -4,6 +4,7 @@ namespace Tg\OkoaBundle\Search;
 
 use ArrayIterator;
 use IteratorAggregate;
+use Countable;
 
 class Document implements IteratorAggregate, Countable
 {
