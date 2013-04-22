@@ -70,6 +70,30 @@ trait ControllerExtras
         }
     }
 
+    public function getReferer()
+    {
+        $referer = $this->request->headers->get('referer');
+        if($referer) {
+            $baseUrl = $this->getRequest()->getSchemeAndHttpHost();
+            if(strpos($referer, $baseUrl) === 0) {
+                $referer = substr($referer, strlen($baseUrl));
+            }
+        }
+        return $referer;
+    }
+
+    public function redirectToStoredReferer($fallback, $fallbackParams = array())
+    {
+        if($this->session->has('referer')) {
+            $redirectRoute = $this->session->get('referer');
+            $redirectRoutePath = $redirectRoute['_route'];
+            unset($redirectRoute['_route']);
+            return $this->redirectTo($redirectRoutePath, $redirectRoute);
+        } else {
+            return $this->redirectTo($fallback, $fallbackParams); 
+        }
+    }
+
     abstract public function redirect($url, $status = 302);
 
     abstract public function get($name);
