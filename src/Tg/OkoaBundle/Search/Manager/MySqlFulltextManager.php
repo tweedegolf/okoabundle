@@ -89,7 +89,7 @@ class MySqlFulltextManager extends SearchManager
     protected function doDeleteIndex(Definition $definition, ObjectManager $em)
     {
         $table = $this->getSearchTable($definition);
-        $query = "DROP TABLE `{$table}`";
+        $query = "DROP TABLE IF EXISTS `{$table}`";
         $db = $this->getConnection($definition);
         $db->exec($query);
     }
