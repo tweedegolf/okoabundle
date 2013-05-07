@@ -3,35 +3,62 @@
 namespace Tg\OkoaBundle\Search\Manager;
 
 use Doctrine\Common\EventSubscriber;
+use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use Doctrine\ORM\QueryBuilder;
 use RuntimeException;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Tg\OkoaBundle\Search\Definition;
 use Tg\OkoaBundle\Search\Document;
 use Tg\OkoaBundle\Search\Searchable;
 
+/**
+ * Class that manages searches and the indexes related to searching.
+ * Specific implementations can use different index formats.
+ */
 abstract class SearchManager implements EventSubscriber
 {
-    private $em;
-
+    /**
+     * The changed entities required for the next postflush since the last onflush
+     */
     private $changeset = null;
 
+    /**
+     * The doctrine entity manager registry.
+     * @var RegistryInterface
+     */
     protected $registry;
 
+    /**
+     * Cached definition classes for entities.
+     * @var Definition[]
+     */
     protected $definitions = [];
 
+    /**
+     * Set the doctrine entity manager registry.
+     * @param  RegistryInterface $registry
+     * @return void
+     */
     public function setRegistry(RegistryInterface $registry)
     {
         $this->registry = $registry;
     }
 
+    /**
+     * Calculate the entities that have changed and see if they need to be updated
+     * in the search index.
+     * @param  OnFlushEventArgs $event
+     * @return void
+     */
     public function onFlush(OnFlushEventArgs $event)
     {
-        $this->em = $event->getEntityManager();
-        $uow = $this->em->getUnitOfWork();
+        $em = $event->getEntityManager();
+        $uow = $em->getUnitOfWork();
 
         $this->changeset = [];
         foreach ($uow->getScheduledEntityInsertions() as $insert) {
@@ -42,37 +69,48 @@ abstract class SearchManager implements EventSubscriber
 
         foreach ($uow->getScheduledEntityUpdates() as $update) {
             if ($update instanceof Searchable) {
-                $this->documentEntity($update, true, false);
+                $this->documentEntity($update, $em, true, false);
                 $this->changeset[] = $update;
             }
         }
 
         foreach ($uow->getScheduledEntityDeletions() as $delete) {
             if ($delete instanceof Searchable) {
-                $this->documentEntity($delete, true, false);
+                $this->documentEntity($delete, $em, true, false);
             }
         }
     }
 
+    /**
+     * Calculate the entities that have changed and see if they need to be updated
+     * in the search index. The postflush event is specifically used for entities
+     * that were created, because they don't have an id before this point.
+     * @param  PostFlushEventArgs $event
+     * @return void
+     */
     public function postFlush(PostFlushEventArgs $event)
     {
-        if ($this->em !== $event->getEntityManager()) {
-            throw new RuntimeException("Different entity manager found at postFlush compared to onFlush");
-        }
-
+        $em = $event->getEntityManager();
         foreach ($this->changeset as $changedEntity) {
-            $this->documentEntity($changedEntity, false, true);
+            $this->documentEntity($changedEntity, $em, false, true);
         }
-
-        $this->em = null;
         $this->changeset = null;
     }
 
-    private function documentEntity(Searchable $entity, $remove = false, $add = false)
+    /**
+     * Document the entity by generating a document and removing/inserting it.
+     * @param  Searchable    $entity The entity to generate and remove/insert a document for.
+     * @param  ObjectManager $em     The ObjectManager associated with the entity.
+     * @param  boolean       $remove Whether or not to remove the entity from the index.
+     * @param  boolean       $add    Whether or not to add the entity to the index.
+     * @return void
+     */
+    private function documentEntity(Searchable $entity, ObjectManager $em, $remove = false, $add = false)
     {
-        $metadata = $this->em->getClassMetadata(get_class($entity));
+
+        $metadata = $em->getClassMetadata(get_class($entity));
         $ids = $this->getEntityId($entity, $metadata);
-        $definition = $this->getIndexDefinition($metadata->getName());
+        $definition = $this->getIndexDefinition($metadata->getName(), $em);
 
         if ($remove) {
             $this->removeDocument($definition, $ids);
@@ -86,7 +124,13 @@ abstract class SearchManager implements EventSubscriber
         }
     }
 
-    public function getEntityId($entity, $metadata)
+    /**
+     * Retrieve the id value of the entity.
+     * @param  Searchable    $entity   The entity to get the id for.
+     * @param  ClassMetadata $metadata The classmetadata for the given entity.
+     * @return mixed                   The value of the id column(s).
+     */
+    public function getEntityId(Searchable $entity, ClassMetadata $metadata)
     {
         $ids = $metadata->getIdentifierValues($entity);
         if (count($ids) === 1) {
@@ -95,7 +139,13 @@ abstract class SearchManager implements EventSubscriber
         return $ids;
     }
 
-    public function getDocument($entity, $metadata)
+    /**
+     * Generate the Document for a given entity.
+     * @param  Searchable    $entity   The entity to get a document for.
+     * @param  ClassMetadata $metadata The classmetadata for the given entity.
+     * @return Document                Returns null if no document was created
+     */
+    public function getDocument(Searchable $entity, ClassMetadata $metadata)
     {
         $document = new Document();
         $result = $entity->getSearchDocument($document, $metadata);
@@ -108,21 +158,44 @@ abstract class SearchManager implements EventSubscriber
         return null;
     }
 
-    protected function getEntityManager()
+    /**
+     * Update all entities in the search index.
+     * @param  Searchable[] $entities List of searchable entities.
+     * @return void
+     */
+    public function updateAll($entities)
     {
-        return $this->em;
+        foreach ($entities as $entity) {
+            $this->update($entity);
+        }
     }
 
-    abstract public function removeDocument(Definition $definition, $id);
+    /**
+     * Update a specific object in the index.
+     * @param  Searchable $entity The entity to update.
+     * @return void
+     */
+    public function update(Searchable $entity)
+    {
+        $em = $this->registry->getManagerForClass(get_class($entity));
+        $this->documentEntity($entity, $em, true, true);
+    }
 
-    abstract public function addDocument(Definition $definition, $id, Document $document);
-
+    /**
+     * Create the index for a given entity name.
+     * @param  string $entity The entity for which to create an index.
+     * @return void
+     */
     public function createIndex($entity)
     {
         $em = $this->registry->getManagerForClass($entity);
         $this->doCreateIndex($this->getIndexDefinition($entity, $em), $em);
     }
 
+    /**
+     * Create all indexes for all entities.
+     * @return void
+     */
     public function createAllIndexes()
     {
         $entities = $this->getSearchableEntities();
@@ -131,12 +204,21 @@ abstract class SearchManager implements EventSubscriber
         }
     }
 
+    /**
+     * Clear the index for a given entity name.
+     * @param  string $entity The entity for which to clear an index.
+     * @return void
+     */
     public function clearIndex($entity)
     {
         $em = $this->registry->getManagerForClass($entity);
         $this->doClearIndex($this->getIndexDefinition($entity, $em), $em);
     }
 
+    /**
+     * Clear all indexes for all entities.
+     * @return void
+     */
     public function clearAllIndexes()
     {
         $entities = $this->getSearchableEntities();
@@ -145,12 +227,21 @@ abstract class SearchManager implements EventSubscriber
         }
     }
 
+    /**
+     * Delete the index for a given entity name.
+     * @param  string $entity The entity for which to delete an index.
+     * @return void
+     */
     public function deleteIndex($entity)
     {
         $em = $this->registry->getManagerForClass($entity);
         $this->doDeleteIndex($this->getIndexDefinition($entity, $em), $em);
     }
 
+    /**
+     * Delete all indexes for all entities.
+     * @return void
+     */
     public function deleteAllIndexes()
     {
         $entities = $this->getSearchableEntities();
@@ -159,6 +250,10 @@ abstract class SearchManager implements EventSubscriber
         }
     }
 
+    /**
+     * Retrieve all names of entities that implement the Searchable interface.
+     * @return string[] The fully qualified names of all relevant entities.
+     */
     public function getSearchableEntities()
     {
         $names = [];
@@ -174,6 +269,12 @@ abstract class SearchManager implements EventSubscriber
         return $names;
     }
 
+    /**
+     * Get a query that selects all entities for a given entity name.
+     * @param string $entity Name of the entity
+     * @return array An array containing the results, a definition and
+     *               the metadata for the entity.
+     */
     public function queryCreateAll($entity)
     {
         $em = $this->registry->getManagerForClass($entity);
@@ -189,6 +290,12 @@ abstract class SearchManager implements EventSubscriber
         ];
     }
 
+    /**
+     * Retrieve the index definition for an entity.
+     * @param  string        $entity The entity for which to get a definition
+     * @param  ObjectManager $em     The objectmanager associated with the entity.
+     * @return Definition
+     */
     public function getIndexDefinition($entity, ObjectManager $em = null)
     {
         $obj = null;
@@ -216,23 +323,77 @@ abstract class SearchManager implements EventSubscriber
         return $this->definitions[$entity];
     }
 
-    abstract protected function doCreateIndex(Definition $definition, ObjectManager $em);
+    /**
+     * Run a simple text query for the given entity name.
+     * @param  string|Definition $entity The entity for which to run a query
+     * @param  string            $query  The query to run
+     * @return AbstractQuery
+     */
+    public function runSimpleQuery($entity, $query)
+    {
+        return $this->getBuilderForSimpleQuery($entity, $query)->getQuery();
+    }
 
-    abstract protected function doClearIndex(Definition $definition, ObjectManager $em);
-
-    abstract protected function doDeleteIndex(Definition $definition, ObjectManager $em);
-
-    public function runTextQuery($entity, $query)
+    /**
+     * Get a query builder that selects results for the given simple text query.
+     * @param  string|Definition $entity The entity for which to run a query
+     * @param  string            $query  The query to run
+     * @return QueryBuilder
+     */
+    public function getBuilderForSimpleQuery($entity, $query)
     {
         if (!($entity instanceof Definition)) {
             $entity = $this->getIndexDefinition($entity);
         }
         $em = $this->registry->getManagerForClass($entity->getMetadata()->getName());
-        return $this->doRunTextQuery($entity, $em, $query);
+        return $this->doGetBuilderForSimpleQuery($entity, $em, $query);
     }
 
-    abstract protected function doRunTextQuery(Definition $definition, ObjectManager $em, $query);
+    /**
+     * If a document with the given id exists, remove it.
+     */
+    abstract public function removeDocument(Definition $definition, $id);
 
+    /**
+     * Add a document and assign it the given id.
+     */
+    abstract public function addDocument(Definition $definition, $id, Document $document);
+
+    /**
+     * Create a new index with the given definition.
+     * @param  Definition    $definition The index definition.
+     * @param  ObjectManager $em         The ObjectManager for the original entity.
+     * @return void
+     */
+    abstract protected function doCreateIndex(Definition $definition, ObjectManager $em);
+
+    /**
+     * Clear an index of all entries, but keep the index ready for new entries.
+     * @param  Definition    $definition The index definition.
+     * @param  ObjectManager $em         The ObjectManager for the original entity.
+     * @return void
+     */
+    abstract protected function doClearIndex(Definition $definition, ObjectManager $em);
+
+    /**
+     * Delete an index.
+     * @param  Definition    $definition The index definition.
+     * @param  ObjectManager $em         The ObjectManager for the original entity.
+     * @return void
+     */
+    abstract protected function doDeleteIndex(Definition $definition, ObjectManager $em);
+
+    /**
+     * Run a simple text query on an index.
+     * @param  Definition    $definition The index definition.
+     * @param  ObjectManager $em         The ObjectManager for the original entity.
+     * @return QueryBuilder
+     */
+    abstract protected function doGetBuilderForSimpleQuery(Definition $definition, ObjectManager $em, $query);
+
+    /**
+     * {@inheritdoc}
+     */
     public function getSubscribedEvents()
     {
         return [Events::onFlush, Events::postFlush];

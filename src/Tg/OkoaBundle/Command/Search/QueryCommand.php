@@ -27,7 +27,7 @@ class QueryCommand extends SearchCommand
         $query = $input->getArgument('query');
         $maxdisplay = (int)$input->getOption('display');
 
-        $query = $manager->runTextQuery($entity, $query);
+        $query = $manager->runSimpleQuery($entity, $query);
         $results = $query->getResult();
 
         $count = count($results);

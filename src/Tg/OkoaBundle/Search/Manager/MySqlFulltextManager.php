@@ -94,7 +94,7 @@ class MySqlFulltextManager extends SearchManager
         $db->exec($query);
     }
 
-    protected function doRunTextQuery(Definition $definition, ObjectManager $em, $query)
+    protected function doGetBuilderForSimpleQuery(Definition $definition, ObjectManager $em, $query)
     {
         $table = $this->getSearchTable($definition);
         $columns = $definition->getColumnsOfType('fulltext');
@@ -134,6 +134,6 @@ class MySqlFulltextManager extends SearchManager
                 $qb->expr()->in($id, $searchResults)
             );
         }
-        return $qb->getQuery();
+        return $qb;
     }
 }
