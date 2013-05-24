@@ -2,11 +2,14 @@
 
 namespace Tg\OkoaBundle\Twig;
 
+use DateTime;
+use Doctrine\Common\Inflector\Inflector;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Twig_Extension;
 use Twig_Function_Function;
+use Twig_SimpleFilter;
 use Twig_SimpleTest;
 
 class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
@@ -23,11 +26,11 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
     public function getFunctions()
     {
         return [
-            'active_controller' => new Twig_Function_Function(array($this, 'activeController')),
-            'active_action' => new Twig_Function_Function(array($this, 'activeAction')),
-            'active_bundle' => new Twig_Function_Function(array($this, 'activeBundle')),
-            'active_route' => new Twig_Function_Function(array($this, 'activeRoute')),
-            'active' => new Twig_Function_Function(array($this, 'active')),
+            'active_controller' => new Twig_Function_Function([$this, 'activeController']),
+            'active_action' => new Twig_Function_Function([$this, 'activeAction']),
+            'active_bundle' => new Twig_Function_Function([$this, 'activeBundle']),
+            'active_route' => new Twig_Function_Function([$this, 'activeRoute']),
+            'active' => new Twig_Function_Function([$this, 'active']),
         ];
     }
 
@@ -49,7 +52,51 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
             'active' => new Twig_SimpleTest('active', function ($what) {
                 return $this->active($what) !== false;
             }),
+            'string' => new Twig_SimpleTest('string', 'is_string'),
+            'array' => new Twig_SimpleTest('array', 'is_array'),
+            'integer' => new Twig_SimpleTest('integer', 'is_integer'),
+            'boolean' => new Twig_SimpleTest('boolean', 'is_bool'),
+            'object' => new Twig_SimpleTest('object', 'is_object'),
+            'double' => new Twig_SimpleTest('double', 'is_double'),
+            'float' => new Twig_SimpleTest('float', 'is_float'),
+            'number' => new Twig_SimpleTest('number', 'is_numeric'),
         ];
+    }
+
+    public function getFilters()
+    {
+        return [
+            new Twig_SimpleFilter('pluralize', [$this, 'pluralize']),
+            new Twig_SimpleFilter('singularize', [$this, 'singularize']),
+            new Twig_SimpleFilter('trans_date', [$this, 'transDate']),
+            new Twig_SimpleFilter('trans_time', [$this, 'transTime']),
+            new Twig_SimpleFilter('trans_datetime', [$this, 'transDateTime']),
+        ];
+    }
+
+    public function pluralize($string)
+    {
+        return Inflector::pluralize($string);
+    }
+
+    public function singularize($string)
+    {
+        return Inflector::singularize($string);
+    }
+
+    public function transDateTime(DateTime $date, $format = '%d-%m-%Y %H:%i')
+    {
+        return strftime($format, $date->getTimestamp());
+    }
+
+    public function transDate(DateTime $date, $format = '%d-%m-%Y')
+    {
+        return strftime($format, $date->getTimestamp());
+    }
+
+    public function transTime(DateTime $date, $format = '%H:%i')
+    {
+        return strftime($format, $date->getTimestamp());
     }
 
     public function active($what, $output = self::DEFAULT_ACTIVE_TEXT)
