@@ -1,5 +1,6 @@
 {
     "name": "tg/okoabundle",
+    "license": "MIT",
     "description": "Symfony bundle for Okoa",
     "authors": [
         {
