@@ -1,5 +1,6 @@
 {
     "name": "tg/okoabundle",
+    "homepage": "https://bitbucket.org/tweedegolf/okoabundle",
     "license": "MIT",
     "description": "Symfony bundle for Okoa",
     "authors": [
