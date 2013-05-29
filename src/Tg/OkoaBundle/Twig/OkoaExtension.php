@@ -84,7 +84,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         return Inflector::singularize($string);
     }
 
-    public function transDateTime(DateTime $date, $format = '%d-%m-%Y %H:%i')
+    public function transDateTime(DateTime $date, $format = '%d-%m-%Y %H:%M')
     {
         return strftime($format, $date->getTimestamp());
     }
@@ -94,7 +94,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         return strftime($format, $date->getTimestamp());
     }
 
-    public function transTime(DateTime $date, $format = '%H:%i')
+    public function transTime(DateTime $date, $format = '%H:%M')
     {
         return strftime($format, $date->getTimestamp());
     }
