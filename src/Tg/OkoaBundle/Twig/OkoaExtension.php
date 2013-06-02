@@ -66,12 +66,32 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
     public function getFilters()
     {
         return [
+            new Twig_SimpleFilter('slugify', [$this, 'slugify']),
             new Twig_SimpleFilter('pluralize', [$this, 'pluralize']),
             new Twig_SimpleFilter('singularize', [$this, 'singularize']),
             new Twig_SimpleFilter('trans_date', [$this, 'transDate']),
             new Twig_SimpleFilter('trans_time', [$this, 'transTime']),
             new Twig_SimpleFilter('trans_datetime', [$this, 'transDateTime']),
         ];
+    }
+
+    /**
+     * Transform any string into a slug.
+     * Transliterate any non-ascii character to the equivalent
+     * ascii character.
+     *
+     * @param string
+     * @return string
+     */
+    public function slugify($string)
+    {
+        $string = preg_replace('~[^\\pL\d]+~u', '-', $string);
+        $string = trim($string, '-');
+        $string = iconv('utf-8', 'us-ascii//TRANSLIT', $string);
+        $string = strtolower($string);
+        $string = preg_replace('~[^-\w]+~', '', $string);
+
+        return $string;
     }
 
     public function pluralize($string)
