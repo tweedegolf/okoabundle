@@ -1,7 +1,4 @@
 services:
-    em:
-        alias: doctrine.orm.entity_manager
-
     okoa.twig_okoa_extension:
         class: Tg\OkoaBundle\Twig\OkoaExtension
         tags: [{ name: twig.extension }]

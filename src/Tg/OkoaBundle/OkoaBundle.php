@@ -17,12 +17,7 @@ class OkoaBundle extends Bundle
     public function boot()
     {
         $em = $this->container->get('doctrine')->getManager();
-        $reflector = new ReflectionClass($em);
-        if ($reflector->hasProperty('delegate')) {
-	        $property = $reflector->getProperty('delegate');
-	        $property->setAccessible(true);
-	        $em = $property->getValue($em);
-    	}
+        $this->container->set('em', $em);
         PersistentObject::setObjectManager($em);
     }
 }
