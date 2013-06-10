@@ -4,6 +4,7 @@ namespace Tg\OkoaBundle\Twig;
 
 use DateTime;
 use Doctrine\Common\Inflector\Inflector;
+use LogicException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,17 +13,33 @@ use Twig_Function_Function;
 use Twig_SimpleFilter;
 use Twig_SimpleTest;
 
+/**
+ * Generic extra twig helpers for okoa projects.
+ */
 class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
 {
+    /**
+     * Default output for route checking functions
+     */
     const DEFAULT_ACTIVE_TEXT = 'active';
 
+    /**
+     * Container the extension is registered with
+     * @var ContainerInterface
+     */
     private $container;
 
+    /**
+     * {@inheritdoc}
+     */
     public function setContainer(ContainerInterface $container = null)
     {
         $this->container = $container;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getFunctions()
     {
         return [
@@ -34,6 +51,9 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         ];
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getTests()
     {
         return [
@@ -63,6 +83,9 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         ];
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getFilters()
     {
         return [
@@ -94,31 +117,73 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         return $string;
     }
 
+    /**
+     * Pluralizes a noun given its singular form.
+     * @param  string $string
+     * @return string
+     */
     public function pluralize($string)
     {
         return Inflector::pluralize($string);
     }
 
+    /**
+     * Creates the singular form given some plural of a noun.
+     * @param  string $string
+     * @return string
+     */
     public function singularize($string)
     {
         return Inflector::singularize($string);
     }
 
-    public function transDateTime(DateTime $date, $format = '%d-%m-%Y %H:%M')
+    /**
+     * Takes a DateTime object or unix timestamp and returns a localized formatted date and time.
+     * @param  DateTime|integer $date
+     * @param  string           $format
+     * @return string
+     */
+    public function transDateTime($date, $format = '%d-%m-%Y %H:%M')
     {
-        return strftime($format, $date->getTimestamp());
+        if ($date instanceof DateTime) {
+            $date = $date->getTimestamp();
+        }
+
+        if (is_integer($date)) {
+            return strftime($format, $date);
+        } else {
+            throw new LogicException("Invalid type given for formatting as a date, requires integer or DateTime");
+        }
     }
 
-    public function transDate(DateTime $date, $format = '%d-%m-%Y')
+    /**
+     * Takes a DateTime object or unix timestamp and returns a localized formatted date.
+     * @param  DateTime|integer $date
+     * @param  string           $format
+     * @return string
+     */
+    public function transDate($date, $format = '%d-%m-%Y')
     {
-        return strftime($format, $date->getTimestamp());
+        return $this->transDateTime($date, $format);
     }
 
-    public function transTime(DateTime $date, $format = '%H:%M')
+    /**
+     * Takes a DateTime object or unix timestamp and returns a localized formatted time.
+     * @param  DateTime|integer $date
+     * @param  string           $format
+     * @return string
+     */
+    public function transTime($date, $format = '%H:%M')
     {
-        return strftime($format, $date->getTimestamp());
+        return $this->transDateTime($date, $format);
     }
 
+    /**
+     * Returns the output if the given route is active. Returns false otherwise.
+     * @param  string $what   Bundle, Controller class, or action method to be checked.
+     * @param  mixed  $output Output that should be returned
+     * @return mixed
+     */
     public function active($what, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         $items = explode(':', $what);
@@ -134,6 +199,12 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         }
     }
 
+    /**
+     * Returns the output if the given route is active. Returns false otherwise.
+     * @param  string $route  Named route
+     * @param  mixed  $output Output that should be returned
+     * @return mixed
+     */
     public function activeRoute($route, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         $activeRoute = $this->container->get('request')->get('_route');
@@ -146,6 +217,12 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         }
     }
 
+    /**
+     * Returns the output if the given controller is active. Returns false otherwise.
+     * @param  string $controller Class name of a controller
+     * @param  mixed  $output     Output that should be returned
+     * @return mixed
+     */
     public function activeController($controller, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         list($bundle, $controllerName) = explode(':', $controller);
@@ -159,6 +236,12 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         }
     }
 
+    /**
+     * Returns the output if the given action method is active. Returns false otherwise.
+     * @param  string $action Class name and action method of the action that should be checked
+     * @param  mixed  $output Output that should be returned
+     * @return mixed
+     */
     public function activeAction($action, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         list($bundle, $controllerName, $actionName) = explode(':', $action);
@@ -172,6 +255,12 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         }
     }
 
+    /**
+     * Returns the output if the given bundle is active. Returns false otherwise.
+     * @param  string $bundle Name of the bundle that should be checked
+     * @param  mixed  $output Output that should be returned
+     * @return mixed
+     */
     public function activeBundle($bundle, $output = self::DEFAULT_ACTIVE_TEXT)
     {
         $controller = $this->container->get('request')->get('_controller');
@@ -184,6 +273,9 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getName()
     {
         return 'okoa_extension';
