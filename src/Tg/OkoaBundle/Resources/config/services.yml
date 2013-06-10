@@ -1,30 +1,41 @@
+parameters:
+    okoa.doctrine.entity_listener_resolver.class: Tg\OkoaBundle\Doctrine\EntityListenerResolver
+    okoa.twig_okoa_extension.class: Tg\OkoaBundle\Twig\OkoaExtension
+    okoa.help_type_extension.class: Tg\OkoaBundle\Form\Extension\HelpTypeExtension
+    okoa.type_guesser.class: Tg\OkoaBundle\Form\Extension\OkoaTypeGuesser
+    okoa.listener.dynamic_discriminator.class: Tg\OkoaBundle\Behavior\Listener\DiscriminatorSubscriber
+    okoa.user_manager.class: Tg\OkoaBundle\Entity\Manager\UserManager
+
 services:
     okoa.twig_okoa_extension:
-        class: Tg\OkoaBundle\Twig\OkoaExtension
+        class: %okoa.twig_okoa_extension.class%
         tags: [{ name: twig.extension }]
         calls:
             - [setContainer, [@service_container]]
 
     okoa.help_type_extension:
-        class: Tg\OkoaBundle\Form\Extension\HelpTypeExtension
+        class: %okoa.help_type_extension.class%
         tags: [{ name: form.type_extension, alias: field }]
         calls:
             - [setAnnotationReader, [@annotation_reader]]
 
     okoa.type_guesser:
-        class: Tg\OkoaBundle\Form\Extension\OkoaTypeGuesser
+        class: %okoa.type_guesser.class%
         tags: [{ name: form.type_guesser }]
         arguments:
             - @validator.mapping.class_metadata_factory
 
     okoa.listener.dynamic_discriminator:
-        class: Tg\OkoaBundle\Behavior\Listener\DiscriminatorSubscriber
+        class: %okoa.listener.dynamic_discriminator.class%
         tags: [{ name: doctrine.event_subscriber }]
         calls:
             - [setAnnotationReader, [@annotation_reader]]
 
     okoa.user_manager:
-        class: Tg\OkoaBundle\Entity\Manager\UserManager
+        class: %okoa.user_manager.class%
         tags: [{name: doctrine.event_subscriber }]
         arguments:
             - @security.encoder_factory
+
+    okoa.doctrine.entity_listener_resolver:
+        class: %okoa.doctrine.entity_listener_resolver.class%
