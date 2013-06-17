@@ -33,6 +33,9 @@ class UserManager implements EventSubscriber
             $encoder = $this->getEncoder($user);
             $user->setPassword($encoder->encodePassword($plainPassword, $user->getSalt()));
             $user->eraseCredentials();
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -40,8 +43,9 @@ class UserManager implements EventSubscriber
     {
         $user = $event->getEntity();
         if ($user instanceof User) {
-            $this->updateUser($user);
-            $event->setNewValue('password', $user->getPassword());
+            if ($this->updateUser($user)) {
+                $event->setNewValue('password', $user->getPassword());
+            }
         }
     }
 
