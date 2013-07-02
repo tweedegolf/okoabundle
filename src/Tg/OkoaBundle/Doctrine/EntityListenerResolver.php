@@ -15,7 +15,7 @@ class EntityListenerResolver extends DefaultEntityListenerResolver
     }
     public function resolve($name)
     {
-        foreach ($this->listener as $listener) {
+        foreach ($this->listeners as $listener) {
             if ($listener instanceof $name) {
                 return $listener;
             }

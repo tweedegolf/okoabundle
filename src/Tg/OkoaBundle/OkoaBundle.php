@@ -21,11 +21,6 @@ class OkoaBundle extends Bundle
         $em = $registry->getManager();
         $this->container->set('em', $em);
         PersistentObject::setObjectManager($em);
-
-        $resolver = $this->container->get('okoa.doctrine.entity_listener_resolver');
-        foreach ($registry->getManagers() as $name => $manager) {
-            $manager->getConfiguration()->setEntityListenerResolver($resolver);
-        }
     }
 
     public function build(ContainerBuilder $container)
