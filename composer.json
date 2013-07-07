@@ -1,6 +1,6 @@
 {
-    "name": "tg/okoabundle",
-    "homepage": "https://bitbucket.org/tweedegolf/okoabundle",
+    "name": "tweedegolf/okoabundle",
+    "homepage": "https://github.com/tweedegolf/okoabundle",
     "license": "MIT",
     "description": "Symfony bundle for Okoa",
     "authors": [
@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-
+        "symfony/symfony": ">=2.3.0",
     },
     "autoload": {
         "psr-0": { "": "src/" }
