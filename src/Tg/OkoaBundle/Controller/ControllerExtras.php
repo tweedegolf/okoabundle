@@ -2,6 +2,8 @@
 
 namespace Tg\OkoaBundle\Controller;
 
+use Doctrine\Common\Persistence\ObjectRepository;
+use Exception;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -73,25 +75,55 @@ trait ControllerExtras
     public function getReferer()
     {
         $referer = $this->request->headers->get('referer');
-        if($referer) {
+        if ($referer) {
             $baseUrl = $this->getRequest()->getSchemeAndHttpHost();
-            if(strpos($referer, $baseUrl) === 0) {
+            if (strpos($referer, $baseUrl) === 0) {
                 $referer = substr($referer, strlen($baseUrl));
             }
         }
         return $referer;
     }
 
-    public function redirectToStoredReferer($fallback, $fallbackParams = array())
+    public function storeReferer($route, $params, $store = '__referer')
     {
-        if($this->session->has('referer')) {
+        $params['_route'] = $route;
+        $this->session->set($store, $params);
+    }
+
+    public function updateStoredReferer($self = false, $store = '__referer')
+    {
+        $referer = $this->getReferer();
+        if ($referer) {
+            $route = $this->router->match($referer);
+            if ($self === true || $this->request->get('_controller') !== $route['_controller']) {
+                $this->storeReferer($route['_route'], $route);
+            }
+        }
+    }
+
+    public function redirectToStoredReferer($fallback, $fallbackParams = array(), $store = '__referer')
+    {
+        if ($this->session->has('referer')) {
             $redirectRoute = $this->session->get('referer');
             $redirectRoutePath = $redirectRoute['_route'];
             unset($redirectRoute['_route']);
             return $this->redirectTo($redirectRoutePath, $redirectRoute);
         } else {
-            return $this->redirectTo($fallback, $fallbackParams); 
+            return $this->redirectTo($fallback, $fallbackParams);
         }
+    }
+
+    public function findOrNotFound($repo, $id = null, $message = 'Not Found')
+    {
+        if ($repo instanceof ObjectRepository) {
+            $entity = $repo->find((int) $id);
+        } else {
+            $entity = $repo;
+        }
+        if ($entity === null) {
+            throw $this->createNotFoundException($message);
+        }
+        return $entity;
     }
 
     abstract public function redirect($url, $status = 302);
@@ -101,4 +133,6 @@ trait ControllerExtras
     abstract public function generateUrl($route, $parameters = [], $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH);
 
     abstract public function getRequest();
+
+    abstract public function createNotFoundException($message = 'Not Found', Exception $previous = null);
 }
