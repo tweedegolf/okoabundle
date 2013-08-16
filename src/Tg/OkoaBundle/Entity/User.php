@@ -5,6 +5,7 @@ namespace Tg\OkoaBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Serializable;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\EquatableInterface;
 use Tg\OkoaBundle\Behavior\Persistable;
 use Tg\OkoaBundle\Behavior\DynamicDiscriminator;
 
@@ -14,7 +15,7 @@ use Tg\OkoaBundle\Behavior\DynamicDiscriminator;
  * @ORM\DiscriminatorColumn(name="discriminator", type="string")
  * @DynamicDiscriminator
  */
-class User extends Persistable implements UserInterface, Serializable
+class User extends Persistable implements UserInterface, EquatableInterface, Serializable
 {
     /**
      * @ORM\Column(type="integer")
@@ -60,9 +61,9 @@ class User extends Persistable implements UserInterface, Serializable
 
     public function serialize()
     {
-        return serialize(array(
+        return serialize([
             $this->id,
-        ));
+        ]);
     }
 
     public function unserialize($serialized)
@@ -108,5 +109,10 @@ class User extends Persistable implements UserInterface, Serializable
     public function eraseCredentials()
     {
         $this->setPlainPassword(false);
+    }
+
+    public function isEqualTo(UserInterface $user)
+    {
+        return $this->getId() === $user->getId();
     }
 }
