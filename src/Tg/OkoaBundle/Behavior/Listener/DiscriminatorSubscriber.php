@@ -2,14 +2,10 @@
 
 namespace Tg\OkoaBundle\Behavior\Listener;
 
-use DirectoryIterator;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
-use Exception;
-use LogicException;
-use ReflectionClass;
 use Doctrine\Common\Annotations\Reader;
 
 /**
@@ -19,8 +15,6 @@ use Doctrine\Common\Annotations\Reader;
  */
 class DiscriminatorSubscriber implements EventSubscriber
 {
-    private $classes = null;
-
     private $reader;
 
     public function setAnnotationReader(Reader $reader)
@@ -36,20 +30,22 @@ class DiscriminatorSubscriber implements EventSubscriber
         $metaData = $metaEvent->getClassMetadata();
         $reflector = $metaData->getReflectionClass();
 
-        $entityAnnotation = $this->reader->getClassAnnotation($reflector, 'Doctrine\ORM\Mapping\Entity');
-        $ddiscrAnnotation = $this->reader->getClassAnnotation($reflector, 'Tg\OkoaBundle\Behavior\DynamicDiscriminator');
+        if ($reflector !== null) {
+            $entityAnnotation = $this->reader->getClassAnnotation($reflector, 'Doctrine\ORM\Mapping\Entity');
+            $ddiscrAnnotation = $this->reader->getClassAnnotation($reflector, 'Tg\OkoaBundle\Behavior\DynamicDiscriminator');
 
-        if ($entityAnnotation && $ddiscrAnnotation) {
-            // assume the base entity has been added manually if the discriminatormap already contains something
-            if (count($metaData->discriminatorMap) === 0) {
-                $metaData->discriminatorMap = array($metaData->name => $metaData->name);
-            }
+            if ($entityAnnotation && $ddiscrAnnotation) {
+                // assume the base entity has been added manually if the discriminatormap already contains something
+                if (count($metaData->discriminatorMap) === 0) {
+                    $metaData->discriminatorMap = array($metaData->name => $metaData->name);
+                }
 
-            $classes = $metaEvent->getEntityManager()->getConfiguration()->getMetadataDriverImpl()->getAllClassNames();
-            $name = $metaData->name;
-            foreach ($classes as $candidate) {
-                if (is_subclass_of($candidate, $name)) {
-                    $metaData->discriminatorMap[$candidate] = $candidate;
+                $classes = $metaEvent->getEntityManager()->getConfiguration()->getMetadataDriverImpl()->getAllClassNames();
+                $name = $metaData->name;
+                foreach ($classes as $candidate) {
+                    if (is_subclass_of($candidate, $name)) {
+                        $metaData->discriminatorMap[$candidate] = $candidate;
+                    }
                 }
             }
         }
