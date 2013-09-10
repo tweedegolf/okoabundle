@@ -4,10 +4,11 @@ namespace Tg\OkoaBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Serializable;
-use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\Role\Role;
 use Symfony\Component\Security\Core\User\EquatableInterface;
-use Tg\OkoaBundle\Behavior\Persistable;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Tg\OkoaBundle\Behavior\DynamicDiscriminator;
+use Tg\OkoaBundle\Behavior\Persistable;
 
 /**
  * @ORM\Entity(repositoryClass="Tg\OkoaBundle\Entity\Repository\UserRepository")
@@ -23,31 +24,36 @@ class User extends Persistable implements UserInterface, EquatableInterface, Ser
      * @ORM\GeneratedValue
      * @var integer
      */
-    protected $id;
+    private $id;
 
     /**
      * @ORM\Column(type="string", length=255, unique=true)
      * @var string
      */
-    protected $username;
+    private $username;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @var string
      */
-    protected $password;
+    private $password;
 
     /**
      * The plain password to be hashed and stored in the database.
      * @var string
      */
-    protected $plainPassword;
+    private $plainPassword;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @var string
      */
-    protected $salt;
+    private $salt;
+
+    public function getId()
+    {
+        return $this->id;
+    }
 
     /**
      * Updates the salt to a new value and removes the old password
@@ -59,6 +65,10 @@ class User extends Persistable implements UserInterface, EquatableInterface, Ser
         $this->setPassword(null);
     }
 
+    /**
+     * Serialize user to string.
+     * @return string
+     */
     public function serialize()
     {
         return serialize([
@@ -66,11 +76,21 @@ class User extends Persistable implements UserInterface, EquatableInterface, Ser
         ]);
     }
 
+
+    /**
+     * Recreate the object from its serialized state.
+     * @param string $serialized
+     * @return void
+     */
     public function unserialize($serialized)
     {
         list($this->id) = unserialize($serialized);
     }
 
+    /**
+     * Retrieve the roles for the user.
+     * @return Role[]
+     */
     public function getRoles()
     {
         $name = explode('\\', static::classname());
@@ -78,21 +98,73 @@ class User extends Persistable implements UserInterface, EquatableInterface, Ser
         return array('ROLE_' . $name);
     }
 
+    /**
+     * Retrieve the password (hashed).
+     * @return string
+     */
     public function getPassword()
     {
         return $this->password;
     }
 
+    /**
+     * Set the hashed password.
+     * @param string $password
+     * @return User
+     */
+    public function setPassword($password)
+    {
+        $this->password = $password;
+        return $this;
+    }
+
+    /**
+     * Retrieve the salt used for generating the password hash.
+     * @return string
+     */
     public function getSalt()
     {
         return $this->salt;
     }
 
+    /**
+     * Set the salt for generating the password hash.
+     * Note that changing this makes it impossible to validate the current password.
+     * @param string $salt
+     * @return User
+     */
+    public function setSalt($salt)
+    {
+        $this->salt = $salt;
+        return $this;
+    }
+
+    /**
+     * Retrieve the username of the user.
+     * @return string
+     */
     public function getUsername()
     {
         return $this->username;
     }
 
+    /**
+     * Change the username.
+     * @param $username
+     * @return User
+     */
+    public function setUsername($username)
+    {
+        $this->username = $username;
+        return $this;
+    }
+
+    /**
+     * Set the password to a new string.
+     * This will automatically be encoded when saving this object.
+     * @param string $plainPassword
+     * @return void
+     */
     public function setPlainPassword($plainPassword)
     {
         $this->plainPassword = $plainPassword;
@@ -101,16 +173,29 @@ class User extends Persistable implements UserInterface, EquatableInterface, Ser
         }
     }
 
+    /**
+     * Retrieve the plaintext password if it is still available.
+     * @return string
+     */
     public function getPlainPassword()
     {
         return $this->plainPassword;
     }
 
+    /**
+     * Remove the plaintext password from the object.
+     * @return void
+     */
     public function eraseCredentials()
     {
-        $this->setPlainPassword(false);
+        $this->setPlainPassword(null);
     }
 
+    /**
+     * Check if two users are the same.
+     * @param UserInterface $user
+     * @return bool
+     */
     public function isEqualTo(UserInterface $user)
     {
         return $this->getId() === $user->getId();
