@@ -3,10 +3,13 @@
 namespace Tg\OkoaBundle\Behavior;
 
 use BadMethodCallException;
-use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\Common\Persistence\PersistentObject;
 use Doctrine\Common\Util\ClassUtils;
-use ReflectionClass;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\QueryBuilder;
+use LogicException;
 
 /**
  * An object that can persist throughout requests by storing it in a database.
@@ -14,96 +17,14 @@ use ReflectionClass;
 abstract class Persistable extends PersistentObject
 {
     /**
-     * Remove an item from a relation collection and return it.
-     * @param  string $field Fieldname of the relation
-     * @param  array  $args  Arguments used for calling
-     * @return mixed
-     */
-    private function remove($field, $args)
-    {
-        $getter = 'get' . ucfirst($field);
-        $value = $this->$getter();
-        if ($value instanceof Collection) {
-            return $value->removeElement($args[0]);
-        }
-    }
-
-    /**
-     * Call for dynamic getters and setters, has and is-functions.
-     * @param  string $method
-     * @param  array  $args
-     * @return mixed
+     * @param string $method
+     * @param array  $args
+     * @return void
+     * @throws BadMethodCallException
      */
     public function __call($method, $args)
     {
-        $start = substr($method, 0, 2);
-
-        // isProperty() methods
-        if ($start === 'is') {
-            $getter = 'get' . substr($method, 2);
-            return (boolean)$this->$getter();
-
-        // removeProperty() methods
-        } else if ($start === 're' && substr($method, 0, 6) === 'remove') {
-            $field = lcfirst(substr($method, 6));
-            return $this->remove($field, $args);
-
-        // hasProperty() methods
-        } else if ($start === 'ha' && substr($method, 0, 3) === 'has') {
-            $getter = 'get' . substr($method, 3);
-            return (boolean)$this->$getter();
-
-        // addProperty(), getProperty() and setProperty() methods
-        } else {
-            try {
-                return parent::__call($method, $args);
-            } catch (BadMethodCallException $e) {
-                $start = substr($method, 0, 3);
-                if ($start === 'set' && count($args) > 0 && (is_array($args[0]) || $args[0] instanceof ArrayCollection)) {
-                    $getter = 'get' . substr($method, 3);
-                    $this->$getter()->clear();
-                    $adder = 'add' . substr($method, 3);
-                    foreach ($args[0] as $item) {
-                        $this->$adder($item);
-                    }
-                } else if ($start !== 'get') {
-                    return parent::__call('get' . ucfirst($method), $args);
-                } else {
-                    throw $e;
-                }
-            }
-        }
-    }
-
-    /**
-     * Retrieve a property by calling the getter
-     * @param  string $property
-     * @return mixed
-     */
-    public function __get($property)
-    {
-        $getter = 'get' . ucfirst($property);
-        return $this->$getter();
-    }
-
-    /**
-     * Set a property by calling the getter
-     * @param string $property
-     * @param mixed $value
-     */
-    public function __set($property, $value)
-    {
-        $setter = 'set' . ucfirst($property);
-        $this->$setter($value);
-    }
-
-    public function __isset($property)
-    {
-        try {
-            return $this->__get($property) !== null;
-        } catch (BadMethodCallException $e) {
-            return false;
-        }
+        throw new BadMethodCallException(sprintf("No method '%s' in '%s'", $method, self::classname()));
     }
 
     /**
@@ -117,7 +38,7 @@ abstract class Persistable extends PersistentObject
 
     /**
      * Retrieve the repository according to the currently associated entity manager.
-     * @return \Doctrine\ORM\EntityRepository
+     * @return ObjectRepository
      */
     public static function repo()
     {
@@ -136,9 +57,9 @@ abstract class Persistable extends PersistentObject
 
     /**
      * Create a new querybuilder for the entity.
-     * If no alias is given, the first letter from the classname is used.
+     * If no alias is given, the first letter from the base classname is used.
      * @param  string $alias
-     * @return \Doctrine\ORM\QueryBuilder
+     * @return QueryBuilder
      */
     public static function qb($alias = null)
     {
@@ -147,7 +68,12 @@ abstract class Persistable extends PersistentObject
             $className = $className[count($className) - 1];
             $alias = strtolower($className[0]);
         }
-        return static::repo()->createQueryBuilder($alias);
+        $repo = static::repo();
+        if ($repo instanceof EntityRepository) {
+            return $repo->createQueryBuilder($alias);
+        } else {
+            throw new LogicException("Can only create query builder for ORM objects");
+        }
     }
 
     /**
@@ -158,7 +84,7 @@ abstract class Persistable extends PersistentObject
      * @param  array $orderBy
      * @param  int $limit
      * @param  int $offset
-     * @return [Persistable]
+     * @return Collection
      */
     public static function all(array $criteria = null, array $orderBy = null, $limit = null, $offset = null)
     {
@@ -183,8 +109,8 @@ abstract class Persistable extends PersistentObject
     /**
      * Magic methods class::by[Name]() and class::oneBy[Name]
      * @param  string $name      Name of the called function
-     * @param  array $arguments List of arguments
-     * @return [Persistable]|Persistable|null
+     * @param  array  $arguments List of arguments
+     * @return Collection|Persistable|null
      */
     public static function __callStatic($name, $arguments)
     {
@@ -193,7 +119,9 @@ abstract class Persistable extends PersistentObject
             $func = 'find' . ucfirst($name);
             return call_user_func_array(array($repo, $func), $arguments);
         } else {
-            throw new \BadMethodCallException(sprintf("Unused static method %s", $name));
+            throw new BadMethodCallException(
+                sprintf("Invalid static method call '%s' in '%s'", $name, static::classname())
+            );
         }
     }
 }
