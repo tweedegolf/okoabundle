@@ -23,7 +23,7 @@ class ScriptHandler extends BaseScriptHandler
     protected static function executeCommand(CommandEvent $event, $appDir, $cmd, $timeout = 300)
     {
         $php = escapeshellarg(self::getPhp());
-        $console = escapeshellarg($appDir.'/../bin/console');
+        $console = escapeshellarg($appDir.'/../bin/symfony');
         if ($event->getIO()->isDecorated()) {
             $console .= ' --ansi';
         }
