@@ -7,9 +7,8 @@ use Doctrine\Common\Inflector\Inflector;
 use LogicException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\HttpFoundation\Request;
 use Twig_Extension;
-use Twig_Function_Function;
+use Twig_SimpleFunction;
 use Twig_SimpleFilter;
 use Twig_SimpleTest;
 
@@ -43,11 +42,17 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
     public function getFunctions()
     {
         return [
-            'active_controller' => new Twig_Function_Function([$this, 'activeController']),
-            'active_action' => new Twig_Function_Function([$this, 'activeAction']),
-            'active_bundle' => new Twig_Function_Function([$this, 'activeBundle']),
-            'active_route' => new Twig_Function_Function([$this, 'activeRoute']),
-            'active' => new Twig_Function_Function([$this, 'active']),
+            new Twig_SimpleFunction('active_controller', [$this, 'activeController']),
+            new Twig_SimpleFunction('active_action', [$this, 'activeAction']),
+            new Twig_SimpleFunction('active_bundle', [$this, 'activeBundle']),
+            new Twig_SimpleFunction('active_route', [$this, 'activeRoute']),
+            new Twig_SimpleFunction('active', [$this, 'active']),
+            new Twig_SimpleFunction(
+                'is_a',
+                function ($obj, $type) {
+                    return is_a($obj, $type, false);
+                }
+            ),
         ];
     }
 
@@ -57,29 +62,44 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
     public function getTests()
     {
         return [
-            'active_controller' => new Twig_SimpleTest('active_controller', function ($controller) {
-                return $this->activeController($controller) !== false;
-            }),
-            'active_action' => new Twig_SimpleTest('active_action', function ($action) {
-                return $this->activeAction($action) !== false;
-            }),
-            'active_bundle' => new Twig_SimpleTest('active_bundle', function ($bundle) {
-                return $this->activeBundle($bundle) !== false;
-            }),
-            'active_route' => new Twig_SimpleTest('active_route', function ($route) {
-                return $this->activeRoute($route) !== false;
-            }),
-            'active' => new Twig_SimpleTest('active', function ($what) {
-                return $this->active($what) !== false;
-            }),
-            'string' => new Twig_SimpleTest('string', 'is_string'),
-            'array' => new Twig_SimpleTest('array', 'is_array'),
-            'integer' => new Twig_SimpleTest('integer', 'is_integer'),
-            'boolean' => new Twig_SimpleTest('boolean', 'is_bool'),
-            'object' => new Twig_SimpleTest('object', 'is_object'),
-            'double' => new Twig_SimpleTest('double', 'is_double'),
-            'float' => new Twig_SimpleTest('float', 'is_float'),
-            'number' => new Twig_SimpleTest('number', 'is_numeric'),
+            new Twig_SimpleTest(
+                'active_controller',
+                function ($controller, array $params = []) {
+                    return $this->isActiveController($controller, $params);
+                }
+            ),
+            new Twig_SimpleTest(
+                'active_action',
+                function ($action, array $params = []) {
+                    return $this->isActiveAction($action, $params);
+                }
+            ),
+            new Twig_SimpleTest(
+                'active_bundle',
+                function ($bundle, array $params = []) {
+                    return $this->isActiveBundle($bundle, $params);
+                }
+            ),
+            new Twig_SimpleTest(
+                'active_route',
+                function ($route, array $params = []) {
+                    return $this->isActiveRoute($route, $params);
+                }
+            ),
+            new Twig_SimpleTest(
+                'active',
+                function ($what, array $params = []) {
+                    return $this->isActive($what, $params);
+                }
+            ),
+            new Twig_SimpleTest('string', 'is_string'),
+            new Twig_SimpleTest('array', 'is_array'),
+            new Twig_SimpleTest('integer', 'is_integer'),
+            new Twig_SimpleTest('boolean', 'is_bool'),
+            new Twig_SimpleTest('object', 'is_object'),
+            new Twig_SimpleTest('double', 'is_double'),
+            new Twig_SimpleTest('float', 'is_float'),
+            new Twig_SimpleTest('number', 'is_numeric'),
         ];
     }
 
@@ -139,6 +159,8 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
 
     /**
      * Takes a DateTime object or unix timestamp and returns a localized formatted date and time.
+     * @throws LogicException
+     * @deprecated
      * @param  DateTime|integer $date
      * @param  string           $format
      * @return string
@@ -158,6 +180,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
 
     /**
      * Takes a DateTime object or unix timestamp and returns a localized formatted date.
+     * @deprecated
      * @param  DateTime|integer $date
      * @param  string           $format
      * @return string
@@ -169,6 +192,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
 
     /**
      * Takes a DateTime object or unix timestamp and returns a localized formatted time.
+     * @deprecated
      * @param  DateTime|integer $date
      * @param  string           $format
      * @return string
@@ -186,14 +210,29 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
      */
     public function active($what, $output = self::DEFAULT_ACTIVE_TEXT)
     {
+        if ($this->isActive($what)) {
+            return $output;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Check if the given route is active.
+     * @param  string $what
+     * @param  array $params
+     * @return bool
+     */
+    public function isActive($what, array $params = [])
+    {
         $items = explode(':', $what);
         switch (count($items)) {
             case 1:
-                return $this->activeBundle($what, $output);
+                return $this->isActiveBundle($what, $params);
             case 2:
-                return $this->activeController($what, $output);
+                return $this->isActiveController($what, $params);
             case 3:
-                return $this->activeAction($what, $output);
+                return $this->isActiveAction($what, $params);
             default:
                 return false;
         }
@@ -207,11 +246,20 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
      */
     public function activeRoute($route, $output = self::DEFAULT_ACTIVE_TEXT)
     {
+        if ($this->isActiveRoute($route)) {
+            return $output;
+        } else {
+            return false;
+        }
+    }
+
+    public function isActiveRoute($route, array $params = [])
+    {
         $activeRoute = $this->container->get('request')->get('_route');
         $route = preg_quote($route, '@');
         $route = str_replace(['\*', '\+'], ['(.*?)', '(.+?)'], $route);
         if (preg_match('@^' . $route . '$@', $activeRoute) === 1) {
-            return $output;
+            return $this->hasParams($params);
         } else {
             return false;
         }
@@ -225,12 +273,27 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
      */
     public function activeController($controller, $output = self::DEFAULT_ACTIVE_TEXT)
     {
+        if ($this->isActiveController($controller)) {
+            return $output;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Check if the given controller is currently active.
+     * @param  string $controller
+     * @param  array  $params
+     * @return bool
+     */
+    public function isActiveController($controller, array $params = [])
+    {
         list($bundle, $controllerName) = explode(':', $controller);
         $controller = $this->container->get('request')->get('_controller');
         $bundle = $this->container->get('kernel')->getBundle($bundle);
         $ns = $bundle->getNamespace() . '\Controller\\' . $controllerName . 'Controller::';
         if (strpos($controller, $ns) === 0) {
-            return $output;
+            return $this->hasParams($params);
         } else {
             return false;
         }
@@ -244,12 +307,27 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
      */
     public function activeAction($action, $output = self::DEFAULT_ACTIVE_TEXT)
     {
+        if ($this->isActiveAction($action)) {
+            return $output;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Check if the given action is active.
+     * @param  string $action
+     * @param  array  $params
+     * @return bool
+     */
+    public function isActiveAction($action, array $params = [])
+    {
         list($bundle, $controllerName, $actionName) = explode(':', $action);
         $controller = $this->container->get('request')->get('_controller');
         $bundle = $this->container->get('kernel')->getBundle($bundle);
         $ns = $bundle->getNamespace() . '\Controller\\' . $controllerName . 'Controller::' . $actionName;
         if ($controller === $ns) {
-            return $output;
+            return $this->hasParams($params);
         } else {
             return false;
         }
@@ -258,19 +336,52 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
     /**
      * Returns the output if the given bundle is active. Returns false otherwise.
      * @param  string $bundle Name of the bundle that should be checked
-     * @param  mixed  $output Output that should be returned
+     * @param  array  $params Parameters
+     * @param  string $output Output that should be returned
      * @return mixed
      */
-    public function activeBundle($bundle, $output = self::DEFAULT_ACTIVE_TEXT)
+    public function activeBundle($bundle, $params = [], $output = self::DEFAULT_ACTIVE_TEXT)
+    {
+        if ($this->isActiveBundle($bundle, $params)) {
+            return $output;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Check if the given bundle is active.
+     * @param  string $bundle Name of the bundle that should be checked
+     * @param  array  $params Parameters to be checked
+     * @return bool
+     */
+    public function isActiveBundle($bundle, array $params = [])
     {
         $controller = $this->container->get('request')->get('_controller');
         $bundle = $this->container->get('kernel')->getBundle($bundle);
         $ns = $bundle->getNamespace() . '\Controller\\';
         if (strpos($controller, $ns) === 0) {
-            return $output;
+            return $this->hasParams($params);
         } else {
             return false;
         }
+    }
+
+    /**
+     * Check if the list of parameters is in the current request.
+     * @param array $params
+     * @return bool
+     */
+    public function hasParams(array $params = [])
+    {
+        $request = $this->container->get('request');
+        foreach ($params as $param => $value) {
+            $data = $request->attributes->get($param, $request->query->get($param));
+            if ($data !== $value) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
