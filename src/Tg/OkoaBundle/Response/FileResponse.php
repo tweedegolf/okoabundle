@@ -16,6 +16,8 @@ class FileResponse extends Response
 
     protected $filename;
 
+    protected $file;
+
     public function __construct($file, $attach = false, $filename = null)
     {
         parent::__construct(null, 200, [
@@ -26,11 +28,9 @@ class FileResponse extends Response
         } else {
             $this->setDispositionInline();
         }
-
+        $this->setFile($file);
         $this->setFilename($filename);
         $this->setPrivate();
-
-        $this->setFile($file);
     }
 
     public function setContentType($type)
@@ -56,6 +56,18 @@ class FileResponse extends Response
         $this->updateProps();
     }
 
+    public function getFilesize()
+    {
+        if (is_string($this->file)) {
+            return filesize($this->file);
+        } else {
+            fseek($this->file, 0, SEEK_END);
+            $size = ftell($this->file);
+            rewind($this->file);
+            return $size;
+        }
+    }
+
     public function setFile($file, $determineType = true)
     {
         if (is_string($file)) {
@@ -63,16 +75,18 @@ class FileResponse extends Response
                 throw new RuntimeException("Could not read file '$file'");
             }
         }
-        $this->setContent($file);
-        $this->tryDetermineType();
+        $this->file = $file;
+        if (is_string($file) && $determineType) {
+            $this->tryDetermineType();
+        }
         $this->updateProps();
     }
 
     public function tryDetermineType()
     {
-        if (is_string($this->content) && strlen($this->content) > 0) {
+        if (is_string($this->file) && strlen($this->file) > 0) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $this->content);
+            $mime = finfo_file($finfo, $this->file);
             if (is_string($mime) && strlen($mime) > 0) {
                 $this->setContentType($mime);
             }
@@ -82,18 +96,24 @@ class FileResponse extends Response
 
     public function sendContent()
     {
-        readfile($this->content);
+        if (is_resource($this->file)) {
+            $size = $this->getFilesize();
+            rewind($this->file);
+            print fread($this->file, $size);
+        } else {
+            readfile($this->file);
+        }
     }
 
     protected function updateProps()
     {
-        if (is_string($this->content)) {
+        if (is_string($this->file) || is_resource($this->file)) {
             $disp = $this->disposition;
             if ($disp !== ResponseHeaderBag::DISPOSITION_INLINE && $this->filename !== null) {
                 $disp .= '; filename=' . $this->filename;
             }
             $this->headers->set('Content-Disposition', $disp);
-            $this->headers->set('Content-Length', filesize($this->content));
+            $this->headers->set('Content-Length', $this->getFilesize());
         } else {
             $this->headers->remove('Content-Disposition');
             $this->headers->remove('Content-Length');
