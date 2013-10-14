@@ -4,7 +4,6 @@ parameters:
     okoa.help_type_extension.class: Tg\OkoaBundle\Form\Extension\HelpTypeExtension
     okoa.type_guesser.class: Tg\OkoaBundle\Form\Extension\OkoaTypeGuesser
     okoa.listener.dynamic_discriminator.class: Tg\OkoaBundle\Behavior\Listener\DiscriminatorSubscriber
-    okoa.user_manager.class: Tg\OkoaBundle\Entity\Manager\UserManager
 
 services:
     okoa.twig_okoa_extension:
@@ -30,12 +29,6 @@ services:
         tags: [{ name: doctrine.event_subscriber }]
         calls:
             - [setAnnotationReader, [@annotation_reader]]
-
-    okoa.user_manager:
-        class: %okoa.user_manager.class%
-        tags: [{name: doctrine.event_subscriber }]
-        arguments:
-            - @security.encoder_factory
 
     okoa.doctrine.entity_listener_resolver:
         class: %okoa.doctrine.entity_listener_resolver.class%
