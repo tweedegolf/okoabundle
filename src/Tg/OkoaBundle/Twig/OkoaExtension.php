@@ -112,9 +112,6 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
             new Twig_SimpleFilter('slugify', [$this, 'slugify']),
             new Twig_SimpleFilter('pluralize', [$this, 'pluralize']),
             new Twig_SimpleFilter('singularize', [$this, 'singularize']),
-            new Twig_SimpleFilter('trans_date', [$this, 'transDate']),
-            new Twig_SimpleFilter('trans_time', [$this, 'transTime']),
-            new Twig_SimpleFilter('trans_datetime', [$this, 'transDateTime']),
         ];
     }
 
@@ -155,51 +152,6 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
     public function singularize($string)
     {
         return Inflector::singularize($string);
-    }
-
-    /**
-     * Takes a DateTime object or unix timestamp and returns a localized formatted date and time.
-     * @throws LogicException
-     * @deprecated
-     * @param  DateTime|integer $date
-     * @param  string           $format
-     * @return string
-     */
-    public function transDateTime($date, $format = '%d-%m-%Y %H:%M')
-    {
-        if ($date instanceof DateTime) {
-            $date = $date->getTimestamp();
-        }
-
-        if (is_integer($date)) {
-            return strftime($format, $date);
-        } else {
-            throw new LogicException("Invalid type given for formatting as a date, requires integer or DateTime");
-        }
-    }
-
-    /**
-     * Takes a DateTime object or unix timestamp and returns a localized formatted date.
-     * @deprecated
-     * @param  DateTime|integer $date
-     * @param  string           $format
-     * @return string
-     */
-    public function transDate($date, $format = '%d-%m-%Y')
-    {
-        return $this->transDateTime($date, $format);
-    }
-
-    /**
-     * Takes a DateTime object or unix timestamp and returns a localized formatted time.
-     * @deprecated
-     * @param  DateTime|integer $date
-     * @param  string           $format
-     * @return string
-     */
-    public function transTime($date, $format = '%H:%M')
-    {
-        return $this->transDateTime($date, $format);
     }
 
     /**

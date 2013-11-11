@@ -2,6 +2,7 @@
 
 namespace Tg\OkoaBundle\Controller;
 
+use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\Persistence\ObjectRepository;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -11,34 +12,6 @@ use Tg\OkoaBundle\Util\TemplateBag;
 
 trait ControllerExtras
 {
-    /**
-     * A list of services that were cached.
-     * @var array
-     */
-    private $service_cache = [];
-
-    /**
-     * Retrieve an object from the service container
-     * @param string $name
-     * @return object
-     */
-    public function __get($name)
-    {
-        if ($name === 'template') {
-            if (!isset($this->service_cache[$name])) {
-                $this->service_cache[$name] = new TemplateBag();
-            }
-        } else {
-            if (!isset($this->service_cache[$name])) {
-                $serviceName = preg_replace_callback('/[A-Z]/', function ($matches) {
-                    return '.' . strtolower($matches[0]);
-                }, $name);
-                $this->service_cache[$name] = $this->container->get($serviceName);
-            }
-        }
-        return $this->service_cache[$name];
-    }
-
     /**
      * Generate a full url for a route.
      * @param  string $route
@@ -138,73 +111,22 @@ trait ControllerExtras
     }
 
     /**
-     * Save a new location for the referer to the session
-     * @param string $route
-     * @param array  $params
-     * @param string $store
+     * Retrieve the object manager with the given name
+     * @param  string $name
+     * @return ObjectManager
      */
-    public function storeReferer($route, $params, $store = '__referer')
+    public function getManager($name = null)
     {
-        $params['_route'] = $route;
-        $this->container->get('session')->set($store, $params);
+        return $this->container->get('doctrine')->getManager($name);
     }
 
     /**
-     * Update the stored referer depending on some conditions
-     * @param bool   $self  If true, only update when the referer is not the current page.
-     * @param string $store Name of the session key to store the data in.
-     * @return bool
+     * Retrieve a repository from the default entity manager
+     * @param  string $name Class or shortened name
+     * @return ObjectRepository
      */
-    public function updateStoredReferer($self = false, $store = '__referer')
+    public function getRepository($name)
     {
-        $referer = $this->getReferer();
-        if ($referer) {
-            $route = $this->container->get('router')->match($referer);
-            if ($self === true || $this->container->get('request')->get('_controller') !== $route['_controller']) {
-                $this->storeReferer($route['_route'], $route);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Redirect to the stored referer or to the given parameters if none is found.
-     * @param  string $fallback       The fallback route name
-     * @param  array  $fallbackParams The fallback route parameters
-     * @param  string $store          Location where the referer data is stored
-     * @return RedirectResponse
-     */
-    public function redirectToStoredReferer($fallback, $fallbackParams = array(), $store = '__referer')
-    {
-        if ($this->container->get('session')->has('referer')) {
-            $redirectRoute = $this->container->get('session')->get('referer');
-            $redirectRoutePath = $redirectRoute['_route'];
-            unset($redirectRoute['_route']);
-            return $this->redirectTo($redirectRoutePath, $redirectRoute);
-        } else {
-            return $this->redirectTo($fallback, $fallbackParams);
-        }
-    }
-
-    /**
-     * Try to retrieve some object from the repository or fail with a not found exception.
-     * @param  mixed  $repo
-     * @param  mixed  $id
-     * @param  string $message
-     * @return object
-     * @throws NotFoundHttpException
-     */
-    public function findOrNotFound($repo, $id = null, $message = 'Not Found')
-    {
-        if ($repo instanceof ObjectRepository) {
-            $entity = $repo->find((int) $id);
-        } else {
-            $entity = $repo;
-        }
-        if ($entity === null) {
-            throw new NotFoundHttpException($message);
-        }
-        return $entity;
+        return $this->getManager()->getRepository($name);
     }
 }
