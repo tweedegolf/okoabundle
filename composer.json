@@ -10,8 +10,8 @@
         }
     ],
     "require": {
-        "symfony/symfony": "2.3.*",
-        "sensio/distribution-bundle": "2.3.*"
+        "symfony/symfony": "~2.3",
+        "sensio/distribution-bundle": "~2.3"
     },
     "autoload": {
         "psr-0": { "": "src/" }
