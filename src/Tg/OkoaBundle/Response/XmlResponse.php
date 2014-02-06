@@ -30,7 +30,7 @@ class XmlResponse extends Response
      */
     public function __construct($data, $root = 'document', $status = 200, $headers = [])
     {
-        parent::construct('', $status, $headers);
+        parent::__construct('', $status, $headers);
         if (!$this->headers->has('Content-Type')) {
             $this->headers->set('Content-Type', 'text/xml');
         }
