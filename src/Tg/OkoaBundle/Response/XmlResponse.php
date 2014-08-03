@@ -76,7 +76,7 @@ class XmlResponse extends Response
         if (is_object($this->data) && $this->data instanceof SimpleXMLElement) {
             $data = new DOMDocument('1.0', 'utf-8');
             $data->appendChild(dom_import_simplexml($this->data));
-        } else if (!is_object($this->data) || !($this->data instanceof DOMDocument)) {
+        } elseif (!is_object($this->data) || !($this->data instanceof DOMDocument)) {
             $data = new DOMDocument('1.0', 'utf-8');
             $root = $data->createElement($this->root);
             $data->appendChild($root);
@@ -89,9 +89,9 @@ class XmlResponse extends Response
     /**
      * Insert the given item in the given document at the position identified
      * by the given element.
-     * @param mixed $item
-     * @param DOMElement $element
-     * @param DOMDocument $document
+     * @param  mixed       $item
+     * @param  DOMElement  $element
+     * @param  DOMDocument $document
      * @return void
      */
     public function toXml($item, DOMElement $element, DOMDocument $document)
@@ -104,20 +104,20 @@ class XmlResponse extends Response
                 $this->toXml($t, $node, $document);
                 $element->appendChild($node);
             }
-        } else if ($iterable) {
+        } elseif ($iterable) {
             $this->assocToXml($item, $element, $document);
-        } else if (is_object($item) && $item instanceof DOMDocument) {
+        } elseif (is_object($item) && $item instanceof DOMDocument) {
             $element->appendChild($item->getDocumentElement());
-        } else if (is_object($item) && $item instanceof DOMElement) {
+        } elseif (is_object($item) && $item instanceof DOMElement) {
             $element->appendChild($item);
-        } else if (is_object($item) && $item instanceof SimpleXMLElement) {
+        } elseif (is_object($item) && $item instanceof SimpleXMLElement) {
             $element->appendChild(dom_import_simplexml($item));
-        }  else if (is_object($item)) {
+        } elseif (is_object($item)) {
             $this->toXml(get_object_vars($item), $element, $document);
-        } else if (is_bool($item)) {
+        } elseif (is_bool($item)) {
             $text = $item ? 'true' : 'false';
             $element->appendChild($document->createTextNode($text));
-        } else if (is_null($item)) {
+        } elseif (is_null($item)) {
             $element->appendChild($document->createTextNode('null'));
         } else {
             $element->appendChild($document->createTextNode($item));
@@ -126,12 +126,13 @@ class XmlResponse extends Response
 
     /**
      * Transform an associative array or associative iterable to a xml document.
-     * @param mixed $iterable
-     * @param DOMElement $element
-     * @param DOMDocument $document
+     * @param  mixed       $iterable
+     * @param  DOMElement  $element
+     * @param  DOMDocument $document
      * @return void
      */
-    public function assocToXml($iterable, DOMElement $element, DOMDocument $document) {
+    public function assocToXml($iterable, DOMElement $element, DOMDocument $document)
+    {
         foreach ($iterable as $key => $item) {
             $iterable = is_array($item) || $item instanceof Iterator;
             if ($iterable && ArrayUtil::isIndexed($item)) {

@@ -3,7 +3,6 @@
 namespace Tg\OkoaBundle;
 
 use Doctrine\Common\Persistence\PersistentObject;
-use ReflectionClass;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Tg\OkoaBundle\DependencyInjection\EntityEventListenerCompilerPass;

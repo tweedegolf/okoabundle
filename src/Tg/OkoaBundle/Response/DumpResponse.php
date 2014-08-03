@@ -40,6 +40,6 @@ class DumpResponse extends Response
      */
     public function usesHtml()
     {
-        return (boolean)ini_get('html_errors');
+        return (boolean) ini_get('html_errors');
     }
 }

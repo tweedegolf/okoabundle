@@ -26,7 +26,7 @@ class CsvResponse extends Response
     }
 
     /**
-     * @param  array $data
+     * @param  array  $data
      * @return string
      */
     private function arrayToCsv($data)

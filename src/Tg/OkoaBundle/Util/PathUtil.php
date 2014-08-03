@@ -12,6 +12,7 @@ class PathUtil
                 $paths[] = $arg;
             }
         }
+
         return preg_replace('#/+#', '/', join('/', $paths));
     }
 }

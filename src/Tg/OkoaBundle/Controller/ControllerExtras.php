@@ -6,9 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\Persistence\ObjectRepository;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Tg\OkoaBundle\Util\TemplateBag;
 
 trait ControllerExtras
 {
@@ -24,8 +22,10 @@ trait ControllerExtras
         $url = $this->container->get('router')->generate($route, $parameters, UrlGeneratorInterface::NETWORK_PATH);
         if ($addScheme) {
             $scheme = $this->container->get('request')->getScheme();
+
             return $scheme . ':' . $url;
         }
+
         return $url;
     }
 
@@ -53,9 +53,9 @@ trait ControllerExtras
 
     /**
      * Redirect to another route.
-     * @param  string $route
-     * @param  array  $parameters
-     * @param  int    $status
+     * @param  string           $route
+     * @param  array            $parameters
+     * @param  int              $status
      * @return RedirectResponse
      */
     public function redirectTo($route, $parameters = [], $status = 302)
@@ -65,20 +65,21 @@ trait ControllerExtras
 
     /**
      * Add a flash message to the session.
-     * @param string $type
-     * @param string $message
+     * @param  string $type
+     * @param  string $message
      * @return $this
      */
     public function addFlash($type, $message)
     {
         $this->container->get('session')->getFlashBag()->add($type, $message);
+
         return $this;
     }
 
     /**
      * Add a flash message and redirect back to the referer.
-     * @param  string $type
-     * @param  string $message
+     * @param  string            $type
+     * @param  string            $message
      * @return RedirectResponse
      * @throws \RuntimeException
      */
@@ -107,12 +108,13 @@ trait ControllerExtras
                 $referer = substr($referer, strlen($baseUrl));
             }
         }
+
         return $referer;
     }
 
     /**
      * Retrieve the object manager with the given name
-     * @param  string $name
+     * @param  string        $name
      * @return ObjectManager
      */
     public function getManager($name = null)
@@ -122,7 +124,7 @@ trait ControllerExtras
 
     /**
      * Retrieve a repository from the default entity manager
-     * @param  string $name Class or shortened name
+     * @param  string           $name Class or shortened name
      * @return ObjectRepository
      */
     public function getRepository($name)

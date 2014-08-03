@@ -20,6 +20,7 @@ class EntityListenerResolver extends DefaultEntityListenerResolver
                 return $listener;
             }
         }
+
         return parent::resolve($name);
     }
 

@@ -15,7 +15,7 @@ class TextResponse extends Response
      */
     public function __construct($content)
     {
-        $content = (string)$content;
+        $content = (string) $content;
         parent::__construct($content, 200, [
             'Content-Type' => 'text/plain'
         ]);

@@ -4,8 +4,6 @@ namespace Tg\OkoaBundle\Composer;
 
 use Composer\Script\CommandEvent;
 use Sensio\Bundle\DistributionBundle\Composer\ScriptHandler as BaseScriptHandler;
-use Symfony\Component\ClassLoader\ClassCollectionLoader;
-use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
 class ScriptHandler extends BaseScriptHandler
