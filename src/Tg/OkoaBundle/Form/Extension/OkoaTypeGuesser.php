@@ -38,6 +38,7 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
     public function guessType($class, $property)
     {
         $guesser = $this;
+
         return $this->guess($class, $property, function ($annot) use ($guesser, $class, $property) {
             return $guesser->guessTypeForAnnotation($annot, $class, $property);
         });
@@ -49,6 +50,7 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
     public function guessRequired($class, $property)
     {
         $guesser = $this;
+
         return $this->guess($class, $property, function ($annot) use ($guesser, $class, $property) {
             return $guesser->guessRequiredForAnnotation($annot, $class, $property);
         }, false);
@@ -60,6 +62,7 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
     public function guessMaxLength($class, $property)
     {
         $guesser = $this;
+
         return $this->guess($class, $property, function ($annot) use ($guesser, $class, $property) {
             return $guesser->guessMaxLengthForAnnotation($annot, $class, $property);
         });
@@ -79,6 +82,7 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
     public function guessPattern($class, $property)
     {
         $guesser = $this;
+
         return $this->guess($class, $property, function ($annot) use ($guesser, $class, $property) {
             return $guesser->guessPatternForAnnotation($annot, $class, $property);
         });
@@ -86,7 +90,7 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
 
     /**
      * Guesses a field class name for a given constraint
-     * @param object $annot The annotation to guess for
+     * @param  object    $annot The annotation to guess for
      * @return TypeGuess The guessed field class and options
      */
     public function guessTypeForAnnotation($annot, $class, $property)
@@ -96,10 +100,10 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
                 $options = null;
                 if ($annot->choices && is_array($annot->choices)) {
                     $options = $annot->choices;
-                } else if (is_string($annot->callback)) {
+                } elseif (is_string($annot->callback)) {
                     $callback = $annot->callback;
                     $options = call_user_func([$class, $callback]);
-                } else if (is_array($annot->callback)) {
+                } elseif (is_array($annot->callback)) {
                     $options = call_user_func($annot->callback);
                 }
                 if (is_array($options)) {
@@ -109,17 +113,19 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
                         $values = array_values($options);
                         $options = array_combine($values, $values);
                     }
+
                     return new TypeGuess('choice', ['choices' =>  $options], Guess::HIGH_CONFIDENCE);
                 }
 
         }
+
         return null;
     }
 
     /**
      * Guesses whether a field is required based on the given annotation
-     * @param object $annot The annotation to guess for
-     * @return Guess The guess whether the field is required
+     * @param  object $annot The annotation to guess for
+     * @return Guess  The guess whether the field is required
      */
     public function guessRequiredForAnnotation($annot, $class, $property)
     {
@@ -128,8 +134,8 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
 
     /**
      * Guesses a field's maximum length based on the given annotation
-     * @param object $annot The annotation to guess for
-     * @return Guess The guess for the maximum length
+     * @param  object $annot The annotation to guess for
+     * @return Guess  The guess for the maximum length
      */
     public function guessMaxLengthForAnnotation($annot, $class, $property)
     {
@@ -138,8 +144,8 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
 
     /**
      * Guesses a field's pattern based on the given annotation
-     * @param object $annot The annotation to guess for
-     * @return Guess The guess for the pattern
+     * @param  object $annot The annotation to guess for
+     * @return Guess  The guess for the pattern
      */
     public function guessPatternForAnnotation($annot, $class, $property)
     {
@@ -149,13 +155,13 @@ class OkoaTypeGuesser implements FormTypeGuesserInterface
     /**
      * Iterates over the constraints of a property, executes a constraints on
      * them and returns the best guess
-     * @param string   $class        The class to read the constraints from
-     * @param string   $property     The property for which to find constraints
-     * @param Closure  $closure      The closure that returns a guess
+     * @param  string  $class        The class to read the constraints from
+     * @param  string  $property     The property for which to find constraints
+     * @param  Closure $closure      The closure that returns a guess
      *                               for a given constraint
-     * @param mixed    $defaultValue The default value assumed if no other value
+     * @param  mixed   $defaultValue The default value assumed if no other value
      *                               can be guessed.
-     * @return Guess The guessed value with the highest confidence
+     * @return Guess   The guessed value with the highest confidence
      */
     protected function guess($class, $property, Closure $closure, $defaultValue = null)
     {

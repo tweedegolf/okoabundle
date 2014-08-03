@@ -64,6 +64,7 @@ class FileResponse extends Response
             fseek($this->file, 0, SEEK_END);
             $size = ftell($this->file);
             rewind($this->file);
+
             return $size;
         }
     }

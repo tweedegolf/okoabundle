@@ -2,9 +2,7 @@
 
 namespace Tg\OkoaBundle\Twig;
 
-use DateTime;
 use Doctrine\Common\Inflector\Inflector;
-use LogicException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Twig_Extension;
@@ -172,7 +170,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
     /**
      * Check if the given route is active.
      * @param  string $what
-     * @param  array $params
+     * @param  array  $params
      * @return bool
      */
     public function isActive($what, array $params = [])
@@ -321,7 +319,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
 
     /**
      * Check if the list of parameters is in the current request.
-     * @param array $params
+     * @param  array $params
      * @return bool
      */
     public function hasParams(array $params = [])
@@ -333,6 +331,7 @@ class OkoaExtension extends Twig_Extension implements ContainerAwareInterface
                 return false;
             }
         }
+
         return true;
     }
 

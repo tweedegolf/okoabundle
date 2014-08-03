@@ -17,8 +17,8 @@ use LogicException;
 abstract class Persistable extends PersistentObject
 {
     /**
-     * @param string $method
-     * @param array  $args
+     * @param  string                 $method
+     * @param  array                  $args
      * @return void
      * @throws BadMethodCallException
      */
@@ -47,7 +47,7 @@ abstract class Persistable extends PersistentObject
 
     /**
      * Retrieve the entity with the given identifier.
-     * @param  int $id
+     * @param  int              $id
      * @return Persistable|null
      */
     public static function find($id)
@@ -58,7 +58,7 @@ abstract class Persistable extends PersistentObject
     /**
      * Create a new querybuilder for the entity.
      * If no alias is given, the first letter from the base classname is used.
-     * @param  string $alias
+     * @param  string       $alias
      * @return QueryBuilder
      */
     public static function qb($alias = null)
@@ -80,10 +80,10 @@ abstract class Persistable extends PersistentObject
      * Retrieve all entities matching the criteria, sorted accordingly, with a limit and offset.
      * If no criteria are given, all entitites will be returned, note that sorting, limit and offset
      * are ignored in that case.
-     * @param  array $criteria
-     * @param  array $orderBy
-     * @param  int $limit
-     * @param  int $offset
+     * @param  array      $criteria
+     * @param  array      $orderBy
+     * @param  int        $limit
+     * @param  int        $offset
      * @return Collection
      */
     public static function all(array $criteria = null, array $orderBy = null, $limit = null, $offset = null)
@@ -98,7 +98,7 @@ abstract class Persistable extends PersistentObject
 
     /**
      * Retrieve one entity given the set of criteria, or null if none is found
-     * @param  array  $criteria
+     * @param  array            $criteria
      * @return Persistable|null
      */
     public static function one(array $criteria)
@@ -108,8 +108,8 @@ abstract class Persistable extends PersistentObject
 
     /**
      * Magic methods class::by[Name]() and class::oneBy[Name]
-     * @param  string $name      Name of the called function
-     * @param  array  $arguments List of arguments
+     * @param  string                      $name      Name of the called function
+     * @param  array                       $arguments List of arguments
      * @return Collection|Persistable|null
      */
     public static function __callStatic($name, $arguments)
@@ -117,6 +117,7 @@ abstract class Persistable extends PersistentObject
         if (substr($name, 0, 2) === 'by' || substr($name, 0, 5) === 'oneBy') {
             $repo = static::repo();
             $func = 'find' . ucfirst($name);
+
             return call_user_func_array(array($repo, $func), $arguments);
         } else {
             throw new BadMethodCallException(

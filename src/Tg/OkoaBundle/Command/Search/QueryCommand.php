@@ -25,7 +25,7 @@ class QueryCommand extends SearchCommand
         $manager = $this->getSearchManager();
         $entity = $input->getArgument('entity');
         $query = $input->getArgument('query');
-        $maxdisplay = (int)$input->getOption('display');
+        $maxdisplay = (int) $input->getOption('display');
 
         $query = $manager->runSimpleQuery($entity, $query);
         $results = $query->getResult();
@@ -48,7 +48,7 @@ class QueryCommand extends SearchCommand
         foreach ($results as $entity) {
             if ($i < $maxdisplay) {
                 if (method_exists($entity, '__toString')) {
-                    $string = (string)$entity;
+                    $string = (string) $entity;
                     $output->writeln("<info> -</info> {$string}");
                 } else {
                     $id = $definition->getMetadata()->getIdentifierValues($entity);
